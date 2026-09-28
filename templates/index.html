@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cooking Bot</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&family=Source+Serif+4:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --enamel: #17403b;
+      --enamel-deep: #0f2e2a;
+      --steam: #f1f5f3;
+      --saffron: #f2b632;
+      --chili: #c8452d;
+      --ink: #1c2b29;
+      --line: #d5dfdb;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      height: 100vh;
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      font-family: "Source Serif 4", Georgia, serif;
+      color: var(--ink);
+      background: var(--steam);
+    }
+
+    /* Side panel */
+    .panel {
+      background: var(--enamel);
+      color: var(--steam);
+      padding: 40px 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+      overflow-y: auto;
+    }
+    .panel h1 {
+      font-family: "Bricolage Grotesque", sans-serif;
+      font-weight: 800;
+      font-size: 2.6rem;
+      line-height: 1;
+      letter-spacing: -0.02em;
+    }
+    .panel h1 span { color: var(--saffron); }
+    .panel p { font-size: 1rem; line-height: 1.5; opacity: 0.85; }
+    .panel h2 {
+      font-family: "Bricolage Grotesque", sans-serif;
+      font-size: 0.95rem;
+      font-weight: 500;
+      opacity: 0.7;
+      margin-bottom: 10px;
+    }
+    .chips { display: flex; flex-direction: column; gap: 8px; }
+    .chip {
+      text-align: left;
+      font: inherit;
+      font-size: 0.95rem;
+      color: var(--steam);
+      background: transparent;
+      border: 1px solid rgba(241, 245, 243, 0.3);
+      border-radius: 999px;
+      padding: 9px 16px;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+    .chip:hover { background: var(--saffron); color: var(--enamel-deep); border-color: var(--saffron); }
+
+    /* Chat area */
+    .chat { display: flex; flex-direction: column; min-height: 0; }
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 40px clamp(20px, 6vw, 72px) 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      scroll-behavior: smooth;
+    }
+    .msg { max-width: 640px; line-height: 1.6; font-size: 1.05rem; }
+    .msg.bot {
+      align-self: flex-start;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-left: 5px solid var(--saffron);
+      border-radius: 4px 16px 16px 16px;
+      padding: 16px 20px;
+    }
+    .msg.user {
+      align-self: flex-end;
+      background: var(--enamel);
+      color: var(--steam);
+      border-radius: 16px 16px 4px 16px;
+      padding: 12px 18px;
+    }
+    .msg.error { border-left-color: var(--chili); color: var(--chili); }
+    .msg p + p, .msg p + ul, .msg p + ol, .msg ul + p, .msg ol + p { margin-top: 10px; }
+    .msg ul, .msg ol { padding-left: 22px; }
+    .msg li + li { margin-top: 4px; }
+    .msg strong { font-weight: 600; }
+
+    /* Typing indicator */
+    .dots { display: inline-flex; gap: 6px; padding: 6px 0; }
+    .dots i {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--enamel);
+      animation: simmer 1.2s infinite ease-in-out;
+    }
+    .dots i:nth-child(2) { animation-delay: 0.15s; }
+    .dots i:nth-child(3) { animation-delay: 0.3s; }
+    @keyframes simmer {
+      0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+      40% { transform: translateY(-6px); opacity: 1; }
+    }
+
+    /* Input */
+    .composer {
+      display: flex;
+      gap: 12px;
+      padding: 16px clamp(20px, 6vw, 72px) 28px;
+    }
+    .composer input {
+      flex: 1;
+      font: inherit;
+      font-size: 1.05rem;
+      padding: 14px 20px;
+      border: 2px solid var(--line);
+      border-radius: 999px;
+      background: #fff;
+      color: var(--ink);
+    }
+    .composer input:focus { outline: none; border-color: var(--enamel); }
+    .composer button {
+      font-family: "Bricolage Grotesque", sans-serif;
+      font-weight: 700;
+      font-size: 1rem;
+      padding: 0 28px;
+      border: none;
+      border-radius: 999px;
+      background: var(--saffron);
+      color: var(--enamel-deep);
+      cursor: pointer;
+    }
+    .composer button:hover { background: #f7c65c; }
+    .composer button:disabled { opacity: 0.5; cursor: not-allowed; }
+    button:focus-visible, input:focus-visible { outline: 3px solid var(--saffron); outline-offset: 2px; }
+
+    @media (max-width: 820px) {
+      body { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+      .panel { padding: 20px; gap: 14px; }
+      .panel h1 { font-size: 1.8rem; }
+      .panel p, .panel .suggestions { display: none; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .dots i { animation: none; opacity: 0.7; }
+      .messages { scroll-behavior: auto; }
+    }
+  </style>
+</head>
+<body>
+  <aside class="panel">
+    <h1>Cooking<br><span>Bot</span></h1>
+    <p>Recipes, substitutions, timings, and technique. Ask about anything that happens in a kitchen.</p>
+    <div class="suggestions">
+      <h2>Try asking</h2>
+      <div class="chips">
+        <button class="chip">How do I cook fluffy basmati rice?</button>
+        <button class="chip">What can I use instead of eggs in a cake?</button>
+        <button class="chip">Plan a 3-day vegetarian dinner menu</button>
+        <button class="chip">How long does cooked chicken last in the fridge?</button>
+      </div>
+    </div>
+  </aside>
+
+  <main class="chat">
+    <div class="messages" id="messages" aria-live="polite"></div>
+    <div class="composer">
+      <input id="input" type="text" placeholder="What are you cooking today?" autocomplete="off" aria-label="Your message">
+      <button id="send">Send</button>
+    </div>
+  </main>
+
+  <script>
+    const messagesEl = document.getElementById("messages");
+    const inputEl = document.getElementById("input");
+    const sendBtn = document.getElementById("send");
+    const history = [];
+
+    function escapeHtml(text) {
+      return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    // Minimal markdown: paragraphs, bullet/numbered lists, and bold text.
+    function renderMarkdown(text) {
+      const lines = escapeHtml(text).split("\n");
+      let html = "";
+      let list = null;
+
+      const closeList = () => {
+        if (list) { html += `</${list}>`; list = null; }
+      };
+      const inline = (s) => s.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+
+      for (const raw of lines) {
+        const line = raw.trim();
+        const bullet = line.match(/^[-*]\s+(.*)/);
+        const numbered = line.match(/^\d+[.)]\s+(.*)/);
+
+        if (bullet || numbered) {
+          const type = bullet ? "ul" : "ol";
+          if (list !== type) { closeList(); html += `<${type}>`; list = type; }
+          html += `<li>${inline((bullet || numbered)[1])}</li>`;
+        } else if (line) {
+          closeList();
+          html += `<p>${inline(line)}</p>`;
+        }
+      }
+      closeList();
+      return html;
+    }
+
+    function addMessage(role, content, isError = false) {
+      const el = document.createElement("div");
+      el.className = `msg ${role}${isError ? " error" : ""}`;
+      if (role === "bot") el.innerHTML = renderMarkdown(content);
+      else el.textContent = content;
+      messagesEl.appendChild(el);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+      return el;
+    }
+
+    function setLoading(loading) {
+      sendBtn.disabled = loading;
+      inputEl.disabled = loading;
+      if (!loading) inputEl.focus();
+    }
+
+    async function sendMessage(text) {
+      text = text.trim();
+      if (!text) return;
+
+      addMessage("user", text);
+      history.push({ role: "user", text });
+      inputEl.value = "";
+      setLoading(true);
+
+      const typing = addMessage("bot", "");
+      typing.innerHTML = '<span class="dots"><i></i><i></i><i></i></span>';
+
+      try {
+        const response = await fetch("/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ messages: history }),
+        });
+        const data = await response.json();
+        typing.remove();
+
+        if (!response.ok) throw new Error(data.error || "Something went wrong.");
+
+        addMessage("bot", data.reply);
+        history.push({ role: "bot", text: data.reply });
+      } catch (error) {
+        typing.remove();
+        history.pop();
+        addMessage("bot", error.message, true);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    sendBtn.addEventListener("click", () => sendMessage(inputEl.value));
+    inputEl.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") sendMessage(inputEl.value);
+    });
+    document.querySelectorAll(".chip").forEach((chip) =>
+      chip.addEventListener("click", () => sendMessage(chip.textContent))
+    );
+
+    addMessage("bot", "Hi, I'm Cooking Bot. Tell me what you're making, or what's in your fridge, and we'll figure out dinner.");
+  </script>
+</body>
+</html>
